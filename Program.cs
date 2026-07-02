@@ -10,12 +10,12 @@ using InventorySalesManagementSystem.Infrastructure.Data;
 using InventorySalesManagementSystem.Infrastructure.JWT;
 using InventorySalesManagementSystem.Infrastructure.Repositories;
 using InventorySalesManagementSystem.Infrastructure.Security;
+using InventorySalesManagementSystem.Infrastructure.Services;
 using InventorySalesManagementSystem.Infrastructure.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Warehouses.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,14 +101,14 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<IReportService, ReportService>();
-
+builder.Services.AddHttpClient<ISlackService, SlackService>();
 var app = builder.Build();
 // Seed Data
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DataSeeder.SeedAsync(context);
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//     await DataSeeder.SeedAsync(context);
+// }
 
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

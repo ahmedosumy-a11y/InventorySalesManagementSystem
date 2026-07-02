@@ -11,7 +11,8 @@ namespace InventorySalesManagementSystem.Application.Services;
 public class OrderService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
-    ILogger<OrderService> logger) : IOrderService
+    ILogger<OrderService> logger,
+    ISlackService slackService) : IOrderService
 {
     public async Task<IReadOnlyList<OrderDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -175,6 +176,7 @@ public class OrderService(
         if (order.OrderSource == OrderSource.POS)
         {
             await CreateSaleForOrderAsync(order, cancellationToken);
+            
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -188,6 +190,19 @@ public class OrderService(
         }
 
         await transaction.CommitAsync(cancellationToken);
+        if (order.OrderSource == OrderSource.POS &&
+            order.Sale != null)
+        {
+            await slackService.SendAsync(
+                SlackChannelType.Sales,
+                "New Sale Completed",
+                $"""
+                Order Id: {order.Id}
+                Invoice: {order.Sale.InvoiceNumber}
+                Total: {order.TotalAmount}
+                """
+            );
+        }
 
         logger.LogInformation("Created order {OrderId} for user {UserId}.", order.Id, userId);
         return await GetByIdAsync(order.Id, cancellationToken);
